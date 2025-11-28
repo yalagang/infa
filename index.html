@@ -1,0 +1,922 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор завершения сборки</title>
+    <style>
+        /* Основные стили */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            color: #f3f0e8;
+            background: linear-gradient(135deg, #1a3a1a 0%, #2a5a2a 50%, #1a3a1a 100%);
+            position: relative;
+            overflow-x: hidden;
+            overflow-y: auto;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* Анимированный фон */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(46, 204, 113, 0.15) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(212, 175, 55, 0.15) 0%, transparent 20%);
+            z-index: -2;
+        }
+        
+        /* Анимированные элементы фона */
+        .bg-element {
+            position: fixed;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(46, 204, 113, 0.3) 0%, transparent 70%);
+            z-index: -1;
+            animation: float 15s infinite linear;
+        }
+        
+        .bg-element:nth-child(1) {
+            width: 200px;
+            height: 200px;
+            top: 10%;
+            left: 5%;
+            animation-duration: 20s;
+        }
+        
+        .bg-element:nth-child(2) {
+            width: 150px;
+            height: 150px;
+            bottom: 15%;
+            right: 10%;
+            animation-duration: 25s;
+            animation-delay: -5s;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.3) 0%, transparent 70%);
+        }
+        
+        .bg-element:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            top: 40%;
+            right: 20%;
+            animation-duration: 18s;
+            animation-delay: -10s;
+        }
+        
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(20px, 40px) rotate(90deg); }
+            50% { transform: translate(40px, 0) rotate(180deg); }
+            75% { transform: translate(20px, -40px) rotate(270deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
+        }
+        
+        .container {
+            background: rgba(30, 50, 30, 0.85);
+            border-radius: 20px;
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.5),
+                inset 0 0 15px rgba(46, 204, 113, 0.3);
+            width: 90%;
+            max-width: 500px;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            backdrop-filter: blur(10px);
+            margin: 30px 0;
+            transition: transform 0.3s ease;
+        }
+        
+        .container:hover {
+            transform: translateY(-5px);
+        }
+        
+        h1 {
+            color: #d4af37;
+            margin-bottom: 10px;
+            font-size: 36px;
+            text-shadow: 0 0 15px rgba(212, 175, 55, 0.7);
+            position: relative;
+            display: inline-block;
+            letter-spacing: 3px;
+            font-weight: bold;
+            background: linear-gradient(to right, #d4af37, #f0c050);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            color: #a0a0a0;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .input-group {
+            margin: 25px 0;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #2ecc71;
+            font-size: 16px;
+            text-shadow: 0 0 5px rgba(46, 204, 113, 0.3);
+        }
+        
+        input[type="time"],
+        input[type="number"] {
+            width: 100%;
+            padding: 16px;
+            border: 1px solid #444;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+            box-sizing: border-box;
+            background: rgba(40, 60, 40, 0.8);
+            color: #f3f0e8;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+        
+        input[type="time"]:focus,
+        input[type="number"]:focus {
+            border-color: #2ecc71;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.3);
+            background: rgba(50, 70, 50, 0.9);
+        }
+        
+        button {
+            background: linear-gradient(145deg, #2ecc71, #27ae60);
+            color: white;
+            border: none;
+            padding: 16px 35px;
+            font-size: 18px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 25px;
+            width: 100%;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.6);
+        }
+        
+        button:hover::before {
+            left: 100%;
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            background: rgba(40, 60, 40, 0.8);
+            border-radius: 15px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #2ecc71;
+            display: none;
+            border-left: 3px solid #2ecc71;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a3a1a 0%, #2a5a2a 100%);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .overlay-content {
+            color: #d4af37;
+            font-size: 64px;
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+            text-shadow: 0 0 30px rgba(212, 175, 55, 1);
+            animation: pulse 1.5s infinite, glow 2s infinite alternate;
+            letter-spacing: 5px;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 20px #d4af37, 0 0 30px #d4af37, 0 0 40px #d4af37; }
+            to { text-shadow: 0 0 30px #d4af37, 0 0 40px #d4af37, 0 0 50px #d4af37; }
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: rgba(40, 60, 40, 0.8);
+            border-radius: 5px;
+            margin: 25px 0;
+            overflow: hidden;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+        
+        .progress {
+            height: 100%;
+            background: linear-gradient(to right, #2ecc71, #d4af37);
+            width: 0%;
+            transition: width 0.5s;
+            border-radius: 4px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 25px;
+            text-align: center;
+        }
+        
+        .stat-box {
+            background: rgba(40, 60, 40, 0.8);
+            padding: 15px;
+            border-radius: 12px;
+            flex: 1;
+            margin: 0 8px;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+        
+        .stat-value {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2ecc71;
+            text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            color: #a0a0a0;
+            margin-top: 5px;
+        }
+        
+        .footer {
+            margin-top: 25px;
+            color: #777;
+            font-size: 12px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 25px 0;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(46, 204, 113, 0.2);
+            border-radius: 50%;
+            border-top: 4px solid #2ecc71;
+            width: 35px;
+            height: 35px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 8px;
+            display: none;
+        }
+        
+        .time-display {
+            font-size: 18px;
+            color: #2ecc71;
+            margin: 15px 0;
+            font-weight: 600;
+            text-shadow: 0 0 5px rgba(46, 204, 113, 0.3);
+        }
+        
+        .prediction {
+            font-style: italic;
+            color: #a0a0a0;
+            margin-top: 15px;
+        }
+        
+        /* Кнопка связи с приемкой - увеличена и выше */
+        .contact-btn {
+            background: linear-gradient(145deg, #d4af37, #b8860b);
+            color: white;
+            border: none;
+            padding: 18px 35px;
+            font-size: 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            margin: 40px 0 30px 0;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 90%;
+            max-width: 500px;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .contact-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: 0.5s;
+        }
+        
+        .contact-btn:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.7);
+        }
+        
+        .contact-btn:hover::before {
+            left: 100%;
+        }
+        
+        .contact-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Секция формы связи с приемкой */
+        .support-section {
+            width: 90%;
+            max-width: 500px;
+            background: rgba(30, 50, 30, 0.85);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 0 auto 30px;
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.5),
+                inset 0 0 15px rgba(46, 204, 113, 0.3);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            backdrop-filter: blur(10px);
+            display: none;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.5s ease;
+        }
+        
+        .support-section.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .support-title {
+            color: #d4af37;
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 25px;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+            background: linear-gradient(to right, #d4af37, #f0c050);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #d4af37;
+            font-size: 16px;
+            text-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #444;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+            box-sizing: border-box;
+            background: rgba(40, 60, 40, 0.8);
+            color: #f3f0e8;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: #d4af37;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.3);
+            background: rgba(50, 70, 50, 0.9);
+        }
+        
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .response-time {
+            text-align: center;
+            color: #a0a0a0;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        
+        /* Секция топ-сотрудников (новая) */
+        .leaderboard-section {
+            width: 90%;
+            max-width: 800px;
+            background: rgba(30, 50, 30, 0.85);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.5),
+                inset 0 0 15px rgba(46, 204, 113, 0.3);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .leaderboard-title {
+            color: #d4af37;
+            font-size: 28px;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+            background: linear-gradient(to right, #d4af37, #f0c050);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .employee-card {
+            display: flex;
+            align-items: center;
+            background: rgba(40, 60, 40, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            transition: transform 0.3s;
+        }
+        
+        .employee-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .employee-info {
+            flex: 1;
+            text-align: left;
+        }
+        
+        .employee-name {
+            color: #d4af37;
+            font-size: 22px;
+            margin: 0 0 5px 0;
+            text-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
+        }
+        
+        .employee-position {
+            color: #a0a0a0;
+            font-size: 16px;
+            margin: 0 0 10px 0;
+        }
+        
+        .employee-description {
+            color: #ccc;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .gold-badge {
+            background: linear-gradient(145deg, #d4af37, #b8860b);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 10px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Анимированные элементы фона -->
+    <div class="bg-element"></div>
+    <div class="bg-element"></div>
+    <div class="bg-element"></div>
+    
+    <div class="container">
+        <h1>FIT</h1>
+        <p class="subtitle">Калькулятор завершения сборки заказов</p>
+        
+        <div class="input-group">
+            <label for="startTime">Время начала сборки:</label>
+            <input type="time" id="startTime" required>
+            <div class="error" id="timeError">Введите корректное время</div>
+        </div>
+
+        <div class="input-group">
+            <label for="remainingLines">Количество оставшихся строк:</label>
+            <input type="number" id="remainingLines" placeholder="Введите количество строк" min="1" required>
+            <div class="error" id="linesError">Введите положительное число строк</div>
+        </div>
+
+        <button id="calculateBtn">Рассчитать время завершения</button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Рассчитываем время...</p>
+        </div>
+
+        <div id="result" class="result">
+            <!-- Результат будет вставлен сюда -->
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress" id="progressBar"></div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-value" id="hoursValue">0</div>
+                <div class="stat-label">ЧАСОВ</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="minutesValue">0</div>
+                <div class="stat-label">МИНУТ</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="linesValue">0</div>
+                <div class="stat-label">СТРОК</div>
+            </div>
+        </div>
+        
+        <div class="time-display" id="timeDisplay"></div>
+        <div class="prediction" id="prediction"></div>
+        
+        <div class="footer">
+            Точный расчет без учета перерывов
+        </div>
+    </div>
+
+    <div class="leaderboard-section">
+        <h2 class="leaderboard-title">ТОП Сотрудников</h2>
+        
+        <div class="employee-card">
+            <div class="employee-info">
+                <h3 class="employee-name">Александр Ляшенко</h3>
+                <div class="employee-position">Топ размещения</div>
+                <p class="employee-description">
+                    Александр демонстрирует исключительные навыки в области размещения заказов. 
+                    Его эффективность и точность позволяют ему consistently быть лидером в своей области. 
+                    Александр обладает высоким уровнем ответственности и внимания к деталям, 
+                    что делает его незаменимым членом команды.
+                </p>
+                <div class="gold-badge">Лидер месяца</div>
+            </div>
+        </div>
+        
+        <div class="employee-card">
+            <div class="employee-info">
+                <h3 class="employee-name">Юрий Репной</h3>
+                <div class="employee-position">Топ приемки</div>
+                <p class="employee-description">
+                    Юрий является экспертом в области приемки товаров. 
+                    Его опыт и внимание к качеству позволяют ему эффективно выявлять любые несоответствия. 
+                    Юрий обладает отличными организационными навыками и способен работать в условиях высокой загрузки, 
+                    при этом сохраняя высокое качество работы.
+                </p>
+                <div class="gold-badge">Профессионал года</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="contact-btn" id="contactBtn">Связь с Приемкой</button>
+
+    <div class="support-section" id="supportSection">
+        <h2 class="support-title">Связь с Приемкой</h2>
+        
+        <form id="supportForm">
+            <div class="form-group">
+                <label for="name">Имя</label>
+                <input type="text" id="name" name="name" placeholder="Введите ваше имя" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Ваша почта</label>
+                <input type="email" id="email" name="email" placeholder="Введите ваш email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="issueType">Тип обращения</label>
+                <select id="issueType" name="issueType" required>
+                    <option value="">Выберите тип обращения</option>
+                    <option value="1">1. Не закрыта ТЕ</option>
+                    <option value="2">2. Нет товара на ТЕ</option>
+                    <option value="3">3. Лишний товар на ТЕ</option>
+                    <option value="4">4. Не могу найти ТЕ</option>
+                    <option value="5">5. Найти ТЕ по товару</option>
+                    <option value="6">6. Другое</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="comment">Комментарий</label>
+                <textarea id="comment" name="comment" placeholder="Опишите вашу проблему подробнее..."></textarea>
+            </div>
+
+            <button type="submit" class="contact-btn">Отправить заявление</button>
+        </form>
+        
+        <div class="response-time">
+            Отвечаем в течение суток, ожидайте
+        </div>
+    </div>
+
+    <div id="overlay" class="overlay">
+        <div class="overlay-content">СЕГОДНЯ БУДЕТ УЖИН!</div>
+    </div>
+
+    <script>
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            // Устанавливаем текущее время в поле "время начала"
+            const now = new Date();
+            const currentHours = String(now.getHours()).padStart(2, '0');
+            const currentMinutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('startTime').value = `${currentHours}:${currentMinutes}`;
+            
+            // Добавляем обработчик для кнопки связи с приемкой
+            document.getElementById('contactBtn').addEventListener('click', function() {
+                const supportSection = document.getElementById('supportSection');
+                supportSection.classList.toggle('active');
+                
+                // Прокрутка к форме
+                if (supportSection.classList.contains('active')) {
+                    supportSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+        
+        // Обработчик кнопки калькулятора
+        document.getElementById('calculateBtn').addEventListener('click', function() {
+            const startTimeInput = document.getElementById('startTime').value;
+            const remainingLinesInput = document.getElementById('remainingLines').value;
+            
+            // Сброс ошибок
+            document.getElementById('timeError').style.display = 'none';
+            document.getElementById('linesError').style.display = 'none';
+            
+            let valid = true;
+            
+            if (!startTimeInput) {
+                document.getElementById('timeError').style.display = 'block';
+                valid = false;
+            }
+            
+            if (!remainingLinesInput || parseInt(remainingLinesInput) <= 0) {
+                document.getElementById('linesError').style.display = 'block';
+                valid = false;
+            }
+            
+            if (!valid) return;
+            
+            const remainingLines = parseInt(remainingLinesInput);
+            
+            // Показываем загрузку
+            document.getElementById('loading').style.display = 'block';
+            
+            // Имитация задержки для визуального эффекта
+            setTimeout(() => {
+                // Получаем текущую дату и устанавливаем начальное время
+                const now = new Date();
+                const [hours, minutes] = startTimeInput.split(':').map(Number);
+                const startTime = new Date(now);
+                startTime.setHours(hours, minutes, 0, 0);
+                
+                // Рассчитываем время в минутах (средняя скорость 650 строк/час)
+                const avgLinesPerHour = 650;
+                const minutesRequired = (remainingLines / avgLinesPerHour) * 60;
+                
+                // Добавляем дополнительное время если сборка проходит после 14:00
+                let additionalTime = 0;
+                const workDayEnd = new Date(startTime);
+                workDayEnd.setHours(16, 0, 0, 0); // 16:00 - конец приема маленьких заказов
+                
+                const estimatedEndTime = new Date(startTime.getTime() + minutesRequired * 60000);
+                
+                // Если предполагаемое время окончания после 16:00, добавляем время на маленькие заказы
+                if (estimatedEndTime > workDayEnd) {
+                    additionalTime = 15; // 15 минут на маленькие заказы
+                }
+                
+                // Если начальное время до 14:00 (2ч дня), добавляем время на основные заказы
+                const ordersEnd = new Date(startTime);
+                ordersEnd.setHours(14, 0, 0, 0);
+                
+                if (startTime < ordersEnd) {
+                    additionalTime += 10; // 10 минут на основные заказы
+                }
+                
+                // Общее время с учетом дополнительных факторов
+                const endTime = new Date(startTime.getTime() + (minutesRequired + additionalTime) * 60000);
+                
+                // Форматируем время для отображения
+                const options = { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: false
+                };
+                const formattedTime = endTime.toLocaleTimeString('ru-RU', options);
+                const formattedDate = endTime.toLocaleDateString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+                
+                // Определяем, следующий день или нет
+                let timeString = formattedTime;
+                if (endTime.getDate() !== now.getDate() || 
+                    endTime.getMonth() !== now.getMonth() || 
+                    endTime.getFullYear() !== now.getFullYear()) {
+                    timeString = `${formattedDate} в ${formattedTime}`;
+                } else {
+                    timeString = `сегодня в ${formattedTime}`;
+                }
+                
+                // Рассчитываем часы и минуты для статистики
+                const totalTimeMinutes = minutesRequired + additionalTime;
+                const hoursRequired = Math.floor(totalTimeMinutes / 60);
+                const minutesLeft = Math.floor(totalTimeMinutes % 60);
+                
+                // Обновляем статистику
+                document.getElementById('hoursValue').textContent = hoursRequired;
+                document.getElementById('minutesValue').textContent = minutesLeft;
+                document.getElementById('linesValue').textContent = remainingLines;
+                
+                // Обновляем прогресс-бар
+                const progressBar = document.getElementById('progressBar');
+                progressBar.style.width = '100%';
+                
+                // Обновляем время
+                document.getElementById('timeDisplay').textContent = `Время окончания: ${timeString}`;
+                
+                // Выводим результат
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = `
+                    Примерное время завершения: <strong>${timeString}</strong><br>
+                    <small>С учетом дополнительных факторов</small>
+                `;
+                resultDiv.style.display = 'block';
+                
+                // Проверяем, если время окончания после 22:00
+                if (endTime.getHours() >= 22) {
+                    document.getElementById('overlay').style.display = 'flex';
+                    document.getElementById('prediction').textContent = "Прогноз: Ужин будет позже обычного!";
+                } else {
+                    document.getElementById('overlay').style.display = 'none';
+                    document.getElementById('prediction').textContent = "Прогноз: Ужин в обычное время";
+                }
+                
+                // Скрываем загрузку
+                document.getElementById('loading').style.display = 'none';
+                
+                // Сбрасываем прогресс-бар через 1 секунду
+                setTimeout(() => {
+                    progressBar.style.width = '0%';
+                }, 1000);
+            }, 800);
+        });
+        
+        // Обработчик формы связи с приемкой
+        document.getElementById('supportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const name = formData.get('name');
+            const email = formData.get('email');
+            const issueType = formData.get('issueType');
+            const comment = formData.get('comment');
+            const time = new Date().toLocaleString('ru-RU');
+            
+            // Определение текста типа проблемы
+            const issueTypes = {
+                '1': 'Не закрыта ТЕ',
+                '2': 'Нет товара на ТЕ',
+                '3': 'Лишний товар на ТЕ',
+                '4': 'Не могу найти ТЕ',
+                '5': 'Найти ТЕ по товару',
+                '6': 'Другое'
+            };
+            
+            const issueText = issueTypes[issueType] || 'Неизвестный тип проблемы';
+            
+            // Формирование сообщения для отправки
+            const fullMessage = `Тип обращения: ${issueText}\nИмя: ${name}\nEmail: ${email}\nВремя: ${time}\nКомментарий: ${comment}`;
+            
+            // Создание ссылки для отправки письма на указанную почту
+            const mailtoLink = `mailto:evghentom7@mail.ru?subject=Запрос от ${name}&body=${encodeURIComponent(fullMessage)}`;
+            
+            // Открытие почтового клиента
+            window.location.href = mailtoLink;
+            
+            // Сброс формы
+            this.reset();
+        });
+        
+        // Валидация полей
+        document.getElementById('remainingLines').addEventListener('input', function() {
+            const value = this.value;
+            if (value && (isNaN(value) || parseInt(value) <= 0)) {
+                this.style.borderColor = '#e74c3c';
+            } else {
+                this.style.borderColor = 'rgba(46, 204, 113, 0.3)';
+            }
+        });
+        
+        // Добавляем анимацию для контейнера при загрузке
+        document.querySelector('.container').style.opacity = '0';
+        document.querySelector('.container').style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            document.querySelector('.container').style.transition = 'opacity 0.5s, transform 0.5s';
+            document.querySelector('.container').style.opacity = '1';
+            document.querySelector('.container').style.transform = 'translateY(0)';
+        }, 100);
+        
+        // Добавляем обработчик для отображения overlay при изменении размера окна
+        window.addEventListener('resize', function() {
+            if (document.getElementById('overlay').style.display === 'flex') {
+                document.getElementById('overlay').style.display = 'flex';
+            }
+        });
+        
+        // Добавляем обработчик для закрытия overlay при нажатии клавиши Esc
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.getElementById('overlay').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
+```
